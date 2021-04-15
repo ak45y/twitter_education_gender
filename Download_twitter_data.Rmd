@@ -1,0 +1,62 @@
+---
+title: "Twitter_COVID_Gender Analysis"
+author: "Arnab Dey"
+date: "4/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## packages
+```{r load-packages, message=FALSE}
+library(rtweet)
+library(tidyverse)
+library(httpuv)
+```
+
+# Set up your access keys and secrets
+```{r}
+appname <- "my_appname"      # Mention the name of your app
+consumer_key <-  "xxxxxxxxxxxxxxxxxxxxx"  # Pass your consumer key here
+consumer_secret <-  "yyyyyyyyyyyyyyyyyyyyyyy" # Pass your consumer secret here
+access_token <-  "1222333444-xxxxxxxxxxxxxxxyyyyyyyyyyyyyyyzzzzz" # Pass your access token goes here
+access_token_secret <-  "zzzzzzzzzzzzzz111111111122222222222222222" # Pass your access token secret here 
+```
+
+# Authentication - create token
+```{r}
+token <- create_token(
+  app = appname,
+  consumer_key = consumer_key,
+  consumer_secret = consumer_secret,
+  access_token = access_token,
+  access_secret = access_token_secret)
+```
+
+# List of twitter handles for which you want to extract the tweets
+
+```{r}
+org_list <- c("abc", "xyz", "qwa", "poi")
+```
+
+# Get Twitter Data between March 01, 2020 and Feb 28, 2021 in english language
+```{r timelines}
+
+# Get all timelines for the list of handles
+df_tweets <- data.frame(matrix(ncol = 0, nrow = 0))
+
+for (i in seq_along(org_list)) {
+  temp <- get_timeline(org_list[i], n = 1000000, retryonratelimit = TRUE)
+  temp_sel <- temp[((temp$created_at > "2020-03-01") & (temp$created_at < "2021-02-28") & (temp$lang == "en")),]
+  df_tweets <- rbind(df_tweets, temp_sel)
+} 
+```
+
+# Save Data in an excel
+
+```{r}
+writexl::write_xlsx(df_tweets, "twitter_data.xlsx")
+```
+

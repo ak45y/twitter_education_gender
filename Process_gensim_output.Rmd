@@ -1,0 +1,112 @@
+---
+title: "Twitter_COVID_Gender Analysis"
+author: "Arnab Dey"
+date: "4/14/2021"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r function to extract hashtags}
+extract_hashtags <- function(data, text) {
+  hash_tags <- as.data.frame(unlist(str_extract_all(data$text, "#\\w+")))
+  colnames(hash_tags) <- "words"
+  hash_tags <- as.data.frame(str_remove_all(hash_tags$words, "[#]"))
+  colnames(hash_tags) <- "words"
+  hash_tags <- hash_tags %>% 
+    count(words)
+  return(hash_tags)
+}
+```
+
+# Read output of the gensim model
+```{r}
+df_topics <- read.csv("output.csv")
+```
+
+# Order topics by number of tweets in that topic
+```{r}
+df_topic_num <- df_topics %>% 
+  count(Dominant_Topic) %>% 
+  arrange(-n) %>% 
+  mutate(topic_num = row_number(-n)) %>% 
+  select(-n)
+  
+df_topics <- df_topics %>% 
+  left_join(df_topic_num, by = "Dominant_Topic") %>% 
+  mutate(date = as.Date(created_at))
+
+```
+
+
+## Label Topics
+
+```{r}
+df_topics <- df_topics %>% 
+    mutate(topic_label = factor(topic_num, 
+          levels = c(1:10), 
+          labels = c("Topic-1: Child-marriage and \nits impacts on education ",
+            "Topic-2: Supporting young \nwomen to learn ",
+            "Topic-3: Access to education \nfor crisis-affected girls ",
+            "Topic-4: Education for \nwomen empowerment ",
+            "Topic- 5: Online events around \ngender equity in education ",  
+            "Topic-6: Gender disparities \nin educational attainment ",
+            "Topic-7: Food insecurity during \nCOVID-19 & its impact on girls ",
+            "Topic-8: Celebrating women \nin Science ",
+            "Topic-9: Online abuse and \nharrassment faced by girls ", 
+            "Topic-10: School Related \nGender Based Violence ")))
+
+```
+
+
+# Create Datasets for the output plots
+
+## Dataframe for wordcloud
+```{r}
+df_ana_full <-read_excel("twitter_data.xlsx")       # Specify the file downloaded from twitter
+df_ana_full <- as.data.frame(df_ana_full[,c(3,4,5)])
+df_wordcloud <- extract_hashtags(df_ana_full, text)
+write.csv(df_wordcloud, "Datasets/data_wordcloud.csv")
+```
+
+## Dataframe for bargraph
+
+```{r}
+df_plot_2 <- df_topics %>% 
+  select(topic_label) %>% 
+  count(topic_label) 
+
+write.csv(df_plot_2, "Datasets/data_fig_2.csv")
+```
+
+## Dataframe for number of tweets over time across topics
+
+### create a dataframe of topic_num and labels
+```{r}
+df_topic_num_label <- df_topics %>% 
+  distinct(topic_num, topic_label) %>% 
+  arrange(topic_num)
+```
+
+### Create a dataframe with selected topics for in-depth analysis
+
+#### Topics selected for in-depth analysis: 1, 3, 6, 7, 9 and 10
+
+```{r}
+df_topics_select <- df_topics %>% 
+  filter(topic_num == 1 | topic_num == 3 | topic_num == 6 | topic_num == 7 | topic_num > 8)
+```
+
+
+### Create dataframe for the plot
+```{r}
+df_plot_3 <- df_topics_select %>% 
+  count(date, topic_num) %>% 
+  left_join(df_topic_num_label, by = "topic_num") %>% 
+  arrange(topic_num, date)
+
+write.csv(df_plot_3, "Datasets/data_fig_3.csv")
+```
+

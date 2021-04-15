@@ -1,0 +1,85 @@
+---
+title: "Twitter_COVID_Gender Analysis"
+author: "Arnab Dey"
+date: "4/14/2021"
+output: html_document
+---
+
+# Load packages
+
+```{r, message=FALSE}
+library(tidyverse)
+library(wordcloud)
+library(forcats)
+```
+
+# Load datasets
+```{r load datasets}
+df_fig_1 <- read.csv("./Datasets/data_wordcloud.csv")
+df_fig_2 <- read.csv("./Datasets/data_fig_2.csv")
+df_fig_3 <- read.csv("./Datasets/data_fig_3.csv")
+```
+
+# Figures for the article
+
+## Fig-1: Wordcloud
+
+```{r}
+set.seed(0112358)
+wordcloud(words = df_fig_1$words, freq = df_fig_1$n, max.words = 100, 
+          random.order=FALSE, rot.per=0.35, colors=brewer.pal(8, "Dark2"))
+
+```
+
+## Figure - 2
+
+```{r plot-topic frequency}
+plot_2 <- ggplot(df_fig_2, aes(x = fct_reorder(topic_label, n), y = n)) + 
+  geom_col(width = 0.9, fill = "#157067") + 
+  geom_text(aes(label = n), size = 3, hjust = 1.5, color = "white") +
+  coord_flip() + 
+  ylim(0, 1500) +
+  xlab("") + 
+  ylab("") +
+  theme_minimal()
+
+plot_2
+```
+
+## Figure - 3
+```{r plot tweets over time}
+
+# convert date from character to date
+df_fig_3$date <- as.Date(df_fig_3$date)
+df_fig_3$topic_num <- as.factor(df_fig_3$topic_num)
+
+df_fig_3$topic_label_new <- factor(df_fig_3$topic_num, levels = c(1,3,6,7,9,10), labels = 
+                                 c("Topic-1: Child-marriage and \nits impacts on education",
+            "Topic-3: Access to education \nfor crisis-affected girls ",
+            "Topic-6: Gender disparities \nin educational attainment ",
+            "Topic-7: Food insecurity during \nCOVID-19 & its impact on girls ",
+            "Topic-9: Online abuse and \nharrassment faced by girls ", 
+            "Topic-10: School Related \nGender Based Violence"))
+
+
+plot_3 <- ggplot(df_fig_3, aes(x = date, y = n)) + 
+  geom_line(color = "#157067") +
+  facet_wrap(~topic_label_new,) +
+  theme_minimal() + 
+  theme(strip.background =element_rect(fill="#5c4555", colour = "#5c4555"))+
+  theme(strip.text = element_text(colour = 'white')) + 
+  xlab("") + 
+  ylab("")
+
+plot_3
+
+```
+
+## Save files
+```{r}
+ggsave(filename="Figures/fig-2.png", plot = plot_2, width=5.5, height=5.5, dpi=300)
+ggsave(filename="Figures/fig-3.png", plot = plot_3, width=7.5, height=5.0, dpi=300)
+```
+
+
+
